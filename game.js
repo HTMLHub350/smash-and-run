@@ -5,6 +5,7 @@ import { updateScoreDisplay } from './utils.js';
 let animationId;
 let running = false;
 let lastTime = performance.now();
+let smashListener = null;
 
 export function setupScene(container) {
   const scene = new THREE.Scene();
@@ -39,7 +40,9 @@ export function animate(delta, scene, camera, renderer, player, onCollision) {
 }
 
 export function startGame(loop, onSmash) {
+  if (running) return;
   running = true;
+  lastTime = performance.now();
 
   function tick(now) {
     if (!running) return;
@@ -51,17 +54,21 @@ export function startGame(loop, onSmash) {
 
   animationId = requestAnimationFrame(tick);
 
-  // Listen for smash events (example: spacebar)
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space') {
-      onSmash();
-    }
-  });
+  if (smashListener) {
+    document.removeEventListener('keydown', smashListener);
+    smashListener = null;
+  }
+  smashListener = e => { if (e.code === 'Space') onSmash(); };
+  document.addEventListener('keydown', smashListener);
 }
 
 export function stopGame() {
   running = false;
   cancelAnimationFrame(animationId);
+  if (smashListener) {
+    document.removeEventListener('keydown', smashListener);
+    smashListener = null;
+  }
 }
 
 export function updateScore(score) {
